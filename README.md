@@ -1,92 +1,114 @@
-mongoid-encrypted-fields
-========================
-[![Build Status](https://secure.travis-ci.org/KoanHealth/mongoid-encrypted-fields.png?branch=master&.png)](http://travis-ci.org/KoanHealth/mongoid-encrypted-fields)
-[![Code Climate](https://codeclimate.com/github/KoanHealth/mongoid-encrypted-fields.png)](https://codeclimate.com/github/KoanHealth/mongoid-encrypted-fields)
+# mongoid-encrypted-fields
 
-New Maintainer Needed
-=====================
-We are actively seeking a new maintainer for this gem!  As we no longer use MongoDB as part of our platform, we aren't using the gem for ourselves.  As MongoDB and Mongoid continually change, we want to make sure our gem keeps up.
+[![CI RSpec Test](https://github.com/joe1chen/mongoid-encrypted-fields/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/joe1chen/mongoid-encrypted-fields/actions/workflows/test.yml)
 
-If you're interested, please contact us!  Thanks
+Encrypted field types for **Mongoid**. Values are encrypted before they are written to MongoDB and decrypted
+transparently when read; equality queries encrypt the search value first, so `where(ssn: '123456789')` just works.
 
-Description
-===========
-A library for storing encrypted data in Mongo using Mongoid.  We looked at a few alternatives, but wanted something that stored the values securely and unobtrusively.
+This is the [DOGOnews](https://www.dogonews.com)-maintained fork of
+[KoanHealth/mongoid-encrypted-fields](https://github.com/KoanHealth/mongoid-encrypted-fields). The original
+authors stopped using MongoDB and asked for a new maintainer; this fork keeps the gem working on current Ruby,
+Rails, Mongoid and MongoDB versions.
 
-Mongoid 3 supports [custom types](http://mongoid.org/en/mongoid/docs/documents.html) that need to only provide a simple interface - allowing us to extend core Ruby types to secure any type while providing a clean interface for developers.
+## Supported versions
 
-Queries encrypt data before searching the database, so equality matches work automatically.
+Tested on every push by the [GitHub Actions matrix](https://github.com/joe1chen/mongoid-encrypted-fields/actions/workflows/test.yml)
+([workflow](.github/workflows/test.yml)):
 
-## Prerequisites
+| Ruby | Rails | Mongoid | MongoDB |
+|---|---|---|---|
+| 2.7 | 6.1 | 7.5 | 6.0 |
+| 3.0 | 6.1 | 8.0 | 6.0 |
+| 3.1 | 7.0 | 8.1 | 7.0 |
+| 3.2 | 7.1 | 8.1 | 7.0 |
+| 3.2 | 7.2 | 9.0 | 7.0 |
+| 3.3 | 7.2 | 9.0 | 8.0 |
+| 3.4 | 8.0 | 9.0 | 8.0 |
 
-* [Mongoid](http://mongoid.org) 5+
-* Rails 4+
-* Ruby 2.0+
-* "Bring your own" encryption, see below
+The gemspec allows `mongoid >= 5`. Mongoid 3/4 and Rails 3.2 were supported by the original gem's 1.x releases.
 
-Mongoid 3, Mongoid 4 and Rails 3.2 are supported in version 1.x of this gem.
+## Installation
 
-## Install
+This fork is not published to RubyGems; install it from GitHub:
 
-    ```ruby
-    gem 'mongoid-encrypted-fields'
-    ```
+```ruby
+# Gemfile
+gem 'mongoid-encrypted-fields', github: 'joe1chen/mongoid-encrypted-fields'
+```
 
 ## Usage
-* Configure the cipher to be used for encrypting field values:
 
-    GibberishCipher can be found in the [examples](https://github.com/KoanHealth/mongoid-encrypted-fields/tree/master/examples) - uses the [Gibberish](https://github.com/mdp/gibberish) gem:
+### 1. Configure a cipher
 
-    ```ruby
-    Mongoid::EncryptedFields.cipher = GibberishCipher.new(ENV['MY_PASSWORD'], ENV['MY_SALT'])
-    ```
+The gem does not ship a cipher — you "bring your own". Any object that responds to `encrypt(string)` and
+`decrypt(string)` works. Set it once at boot (in Rails, e.g. `config/initializers/mongoid_encrypted_fields.rb`):
 
-* Use encrypted types for fields in your models:
+```ruby
+Mongoid::EncryptedFields.cipher = GibberishCipher.new(ENV['MY_PASSWORD'], ENV['MY_SALT'])
+```
 
-    ```ruby
-    class Person
-        include Mongoid::Document
+Ready-made examples are in [`examples/`](examples):
+[`GibberishCipher`](examples/gibberish_cipher.rb) (uses the [gibberish](https://github.com/mdp/gibberish) gem),
+[symmetric](examples/encrypted_strings_symmetric_cipher.rb) and
+[asymmetric](examples/encrypted_strings_asymmetric_cipher.rb) ciphers based on
+[encrypted_strings](https://github.com/pluginaweek/encrypted_strings).
 
-        field :name, type: String
-        field :ssn, type: Mongoid::EncryptedString
-    end
-    ```
+> Keep the password/salt (or key) stable: changing them makes existing encrypted values unreadable.
 
-* The field getter returns the unencrypted value:
+### 2. Use encrypted types on fields
 
-    ```ruby
-    person = Person.new(ssn: '123456789')
-    person.ssn # => '123456789'
-    ```
+```ruby
+class Person
+  include Mongoid::Document
 
-* The encrypted value is accessible with the "encrypted" attribute
+  field :name,      type: String
+  field :ssn,       type: Mongoid::EncryptedString
+  field :birthdate, type: Mongoid::EncryptedDate
+end
+```
 
-    ```ruby
-    person.ssn.encrypted # => <encrypted string>
+Available types: `Mongoid::EncryptedString`, `Mongoid::EncryptedDate`, `Mongoid::EncryptedDateTime`,
+`Mongoid::EncryptedTime`, `Mongoid::EncryptedHash`.
 
-    # It can also be accessed using the hash syntax supported by Mongoid
-    person[:ssn] # => <encrypted string>
-    ```
+### 3. Read, inspect and query
 
-* Finding a model by an encrypted field works automatically (equality only):
+```ruby
+person = Person.new(ssn: '123456789')
+person.ssn            # => "123456789"            (decrypted value)
+person.ssn.encrypted  # => "<encrypted string>"   (what is stored)
+person[:ssn]          # => "<encrypted string>"   (raw attribute)
 
-    ```ruby
-    Person.where(ssn: '123456789').count() # ssn is encrypted before querying the database
-    ```
+Person.where(ssn: '123456789').count   # the value is encrypted before querying
+```
 
-## Known Limitations
-* Single cipher for all encrypted fields
-* Currently can encrypt these [Mongoid types](http://mongoid.org/en/mongoid/docs/documents.html#fields)
-  * Date
-  * DateTime
-  * Hash
-  * String
-  * Time
-* The uniqueness validator for encrypted fields should always be set to case-sensitive.  Encrypted fields cannot support a case-insensitive match.
+## Limitations
 
-## Related Articles
-* [Storing Encrypted Data in MongoDB](http://jerryclinesmith.me/blog/2013/03/29/storing-encrypted-data-in-mongodb/)
-* [Transparently Adding Encrypted Fields to a Rails App using Mongoid](http://blog.thesparktree.com/post/69538763994/transparently-adding-encrypted-fields-to-a-rails-app)
+- One cipher for all encrypted fields.
+- Queries support **equality only** (no ranges, regex or partial matches on encrypted values).
+- Uniqueness checks on encrypted fields must be **case-sensitive** — a case-insensitive comparison can't work on
+  ciphertext.
+
+## Development
+
+```bash
+# needs a MongoDB on localhost:27017 (e.g. docker run -p 27017:27017 mongo:8.0)
+MONGOID_VERSION=9.0 RAILS_VERSION=8.0 bundle install
+MONGOID_VERSION=9.0 RAILS_VERSION=8.0 bundle exec rspec spec
+```
+
+`MONGOID_VERSION` and `RAILS_VERSION` select the versions in the `Gemfile` (defaults: Mongoid 7.5, no Rails pin).
+To add a combination to CI, add a row to `matrix.include` in `.github/workflows/test.yml`.
+
+## History
+
+See [CHANGELOG.md](CHANGELOG.md). This fork (2026) adds the GitHub Actions matrix up to Ruby 3.4 / Rails 8.0 /
+Mongoid 9.0 / MongoDB 8.0 and replaces the old Travis setup and per-combination gemfiles.
+
+## Related articles
+
+- [Storing Encrypted Data in MongoDB](http://jerryclinesmith.me/blog/2013/03/29/storing-encrypted-data-in-mongodb/)
+- [Transparently Adding Encrypted Fields to a Rails App using Mongoid](http://blog.thesparktree.com/post/69538763994/transparently-adding-encrypted-fields-to-a-rails-app)
 
 ## Copyright
-(c) 2012 Koan Health. See LICENSE.txt for further details.
+
+(c) 2012 Koan Health. Licensed under the MIT license — see [LICENSE.txt](LICENSE.txt).

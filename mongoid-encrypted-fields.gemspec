@@ -10,7 +10,7 @@ Gem::Specification.new do |gem|
   gem.email         = ['development@koanhealth.com']
   gem.description   = 'A library for storing encrypted data in Mongo'
   gem.summary       = 'Custom types for storing encrypted data'
-  gem.homepage      = 'https://github.com/KoanHealth/mongoid-encrypted-fields'
+  gem.homepage      = 'https://github.com/joe1chen/mongoid-encrypted-fields'
   gem.license       = 'MIT'
 
   gem.required_ruby_version     = '>= 2.0.0'

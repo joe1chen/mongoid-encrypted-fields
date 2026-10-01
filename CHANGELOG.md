@@ -1,5 +1,10 @@
 # Revision history
 
+## Unreleased (DOGOnews fork)
+* GitHub Actions test matrix: Ruby 2.7–3.4, Rails 6.1–8.0, Mongoid 7.5–9.0, MongoDB 6.0–8.0 (all passing).
+* Removed Travis config and per-combination gemfiles; Gemfile driven by MONGOID_VERSION / RAILS_VERSION.
+* README rewritten for the maintained fork.
+
 ## 2.0.0
 * Drop support for Mongoid 3 and 4.
 

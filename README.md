@@ -29,11 +29,12 @@ The gemspec allows `mongoid >= 5`. Mongoid 3/4 and Rails 3.2 were supported by t
 
 ## Installation
 
-This fork is not published to RubyGems; install it from GitHub:
+This fork is not published to RubyGems; install it from GitHub, pinned to a release tag
+([releases](https://github.com/joe1chen/mongoid-encrypted-fields/releases)):
 
 ```ruby
 # Gemfile
-gem 'mongoid-encrypted-fields', github: 'joe1chen/mongoid-encrypted-fields'
+gem 'mongoid-encrypted-fields', github: 'joe1chen/mongoid-encrypted-fields', tag: 'v2.1.0'
 ```
 
 ## Usage
@@ -101,8 +102,11 @@ To add a combination to CI, add a row to `matrix.include` in `.github/workflows/
 
 ## History
 
-See [CHANGELOG.md](CHANGELOG.md). This fork (2026) adds the GitHub Actions matrix up to Ruby 3.4 / Rails 8.0 /
-Mongoid 9.0 / MongoDB 8.0 and replaces the old Travis setup and per-combination gemfiles.
+Jerry Clinesmith's original (2012, Koan Health) was maintained by KoanHealth through 2.0.0 (2013–2018: Mongoid 3–7,
+`EncryptedHash`, the uniqueness validator; 2.0.0 dropped Mongoid 3 and 4) and continued by DOGOnews in this fork:
+2.1.0 (2026: Mongoid 7.5–9.x on current Ruby/Rails/MongoDB, tested by a GitHub Actions matrix that replaces the old
+Travis setup and per-combination gemfiles).
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Related articles
 

@@ -1,0 +1,55 @@
+name: CI RSpec Test
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: >-
+      Mongoid ${{ matrix.mongoid }} - Ruby ${{ matrix.ruby }} - Rails ${{ matrix.rails }} - MongoDB ${{ matrix.mongodb }}
+    env:
+      CI: true
+      TESTOPTS: -v
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # What dogo-web runs today
+          - { ruby: "2.7", rails: "6.1", mongoid: "7.5", mongodb: "6.0" }
+          # Upgrade path to Mongoid 9 / MongoDB 8.0
+          - { ruby: "3.0", rails: "6.1", mongoid: "8.0", mongodb: "6.0" }
+          - { ruby: "3.1", rails: "7.0", mongoid: "8.1", mongodb: "7.0" }
+          - { ruby: "3.2", rails: "7.1", mongoid: "8.1", mongodb: "7.0" }
+          - { ruby: "3.2", rails: "7.2", mongoid: "9.0", mongodb: "7.0" }
+          - { ruby: "3.3", rails: "7.2", mongoid: "9.0", mongodb: "8.0" }
+          - { ruby: "3.4", rails: "8.0", mongoid: "9.0", mongodb: "8.0" }
+    steps:
+      - name: repo checkout
+        uses: actions/checkout@v4
+
+      - name: start mongodb
+        uses: supercharge/mongodb-github-action@1.11.0
+        with:
+          mongodb-version: ${{ matrix.mongodb }}
+          mongodb-replica-set: rs0
+
+      - name: load ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+        env:
+          MONGOID_VERSION: ${{ matrix.mongoid }}
+          RAILS_VERSION: ${{ matrix.rails }}
+
+      - name: bundle install
+        run: bundle install --jobs 4 --retry 3
+        env:
+          MONGOID_VERSION: ${{ matrix.mongoid }}
+          RAILS_VERSION: ${{ matrix.rails }}
+
+      - name: test
+        timeout-minutes: 10
+        run: bundle exec rspec spec
+        env:
+          MONGOID_VERSION: ${{ matrix.mongoid }}
+          RAILS_VERSION: ${{ matrix.rails }}

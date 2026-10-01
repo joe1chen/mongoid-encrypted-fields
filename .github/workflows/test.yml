@@ -25,7 +25,7 @@ jobs:
           - { ruby: "3.4", rails: "8.0", mongoid: "9.0", mongodb: "8.0" }
     steps:
       - name: repo checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: start mongodb
         uses: supercharge/mongodb-github-action@1.11.0

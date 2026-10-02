@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CI: test Mongoid 7.5 with Ruby driver 2.26 against MongoDB 8.0 (Ruby 2.7 / Rails 6.1).
+
 ## [2.1.0] - 2026-10-01
 DOGOnews fork. Minor version because the supported Mongoid range is unchanged (`>= 5`, as in 2.0.0) and the public
 API did not change.
